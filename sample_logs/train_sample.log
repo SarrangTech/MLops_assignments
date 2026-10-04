@@ -1,0 +1,31 @@
+2026-10-04 13:48:06 | INFO     | mlops.train   | === Run started ===
+2026-10-04 13:48:06 | INFO     | mlops.data    | Loading built-in Wine dataset from scikit-learn
+2026-10-04 13:48:06 | DEBUG    | mlops.data    | Feature names: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+2026-10-04 13:48:06 | DEBUG    | mlops.data    | Class names: ['class_0', 'class_1', 'class_2']
+2026-10-04 13:48:06 | INFO     | mlops.data    | Dataset shape: X=(178, 13), y=(178,)
+2026-10-04 13:48:06 | INFO     | mlops.data    | Class distribution: {0: 59, 1: 71, 2: 48}
+2026-10-04 13:48:06 | INFO     | mlops.train   | Train/test split: 133 train rows, 45 test rows (test_size=0.25, seed=42)
+2026-10-04 13:48:06 | INFO     | mlops.train   | Hyperparameters: {'n_estimators': 100, 'max_depth': 5, 'random_state': 42}
+2026-10-04 13:48:30 | INFO     | mlops.train   | === Run started ===
+2026-10-04 13:48:30 | INFO     | mlops.data    | Loading built-in Wine dataset from scikit-learn
+2026-10-04 13:48:30 | DEBUG    | mlops.data    | Feature names: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids', 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+2026-10-04 13:48:30 | DEBUG    | mlops.data    | Class names: ['class_0', 'class_1', 'class_2']
+2026-10-04 13:48:30 | INFO     | mlops.data    | Dataset shape: X=(178, 13), y=(178,)
+2026-10-04 13:48:30 | INFO     | mlops.data    | Class distribution: {0: 59, 1: 71, 2: 48}
+2026-10-04 13:48:30 | INFO     | mlops.train   | Train/test split: 133 train rows, 45 test rows (test_size=0.25, seed=42)
+2026-10-04 13:48:30 | INFO     | mlops.train   | Hyperparameters: {'n_estimators': 100, 'max_depth': 5, 'random_state': 42}
+2026-10-04 13:48:30 | INFO     | mlops.train   | Training finished in 0.097s
+2026-10-04 13:48:30 | INFO     | mlops.train   | Test accuracy: 1.0000
+2026-10-04 13:48:30 | DEBUG    | mlops.train   | Classification report:
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        15
+           1       1.00      1.00      1.00        18
+           2       1.00      1.00      1.00        12
+
+    accuracy                           1.00        45
+   macro avg       1.00      1.00      1.00        45
+weighted avg       1.00      1.00      1.00        45
+
+2026-10-04 13:48:30 | INFO     | mlops.model   | Model saved to D:\northeastern\MLOps\wine-training-logging-lab\models\wine_rf.joblib (204497 bytes)
+2026-10-04 13:48:30 | INFO     | mlops.train   | === Run finished successfully (accuracy=1.0000) ===
