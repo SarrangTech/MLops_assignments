@@ -67,7 +67,8 @@ lab2-docker/
 ├── .dockerignore         <- NEW: keeps the build context clean
 ├── requirements.txt      <- pinned versions
 ├── README.md             <- this file
-├── sample_output/        <- a verified run's metrics.json + run_log.txt
+├── sample_output/        <- a verified run's metrics.json + run_log.txt,
+│                            plus docker_verification.md (CI evidence)
 └── src/
     └── main.py           <- the training script that runs in the container
 ```
@@ -243,7 +244,29 @@ dataset or model.
 
 ---
 
-## 7. Troubleshooting
+## 7. Verification evidence
+
+This lab was run successfully in a clean environment, not just
+written:
+
+- **Locally**, in a fresh virtual environment with the pinned
+  requirements — exit code 0, accuracy 0.9561, F1 0.9655, model and
+  metrics produced (log and metrics in `sample_output/`).
+- **In Docker**, via the GitHub Actions workflow
+  `.github/workflows/lab2-docker-build.yml` in this repo, which
+  builds the image from this folder's `Dockerfile` on a clean
+  runner, runs the container with the output volume mounted,
+  verifies the model and `metrics.json` come out of the container,
+  exercises the Docker Compose path, and re-runs with different
+  arguments. First verified run (2026-10-18, success):
+  https://github.com/SarrangTech/MLops_assignments/actions/runs/39162001130
+  — all runs are on the repo's Actions tab, and each run uploads
+  the model + metrics as the `lab2-docker-output` artifact.
+  Full details: `sample_output/docker_verification.md`.
+
+---
+
+## 8. Troubleshooting
 
 - **`docker: command not found`** — Docker Desktop / Engine is not
   installed or not running. Install it (Section 1) and, on Desktop,
