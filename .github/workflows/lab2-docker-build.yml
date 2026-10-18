@@ -1,0 +1,54 @@
+# Lab 2 (Docker) - remote verification workflow.
+# Docker is not available in every local environment, so this workflow
+# proves the lab's Dockerfile on a clean GitHub runner: it builds the
+# image from lab2-docker/, runs the container, checks that the model
+# and metrics actually come out on the mounted /app/output volume,
+# and runs a second time with different ENTRYPOINT arguments.
+name: lab2-docker-build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lab2-docker/**"
+      - ".github/workflows/lab2-docker-build.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Build the Lab 2 Docker image
+        run: docker build -t lab2-docker ./lab2-docker
+
+      - name: Show image size
+        run: docker images lab2-docker
+
+      - name: Run the container (default arguments, output volume mounted)
+        run: |
+          mkdir -p lab2-docker/output
+          chmod 777 lab2-docker/output
+          docker run --rm -v "$GITHUB_WORKSPACE/lab2-docker/output:/app/output" lab2-docker
+
+      - name: Verify model and metrics came out of the container
+        run: |
+          test -f lab2-docker/output/breast_cancer_rf.joblib
+          test -f lab2-docker/output/metrics.json
+          ls -lh lab2-docker/output/
+          cat lab2-docker/output/metrics.json
+
+      - name: Run again with different arguments (ENTRYPOINT check, no rebuild)
+        run: docker run --rm lab2-docker --n-estimators 10 --output-dir /app/output
+
+      - name: Upload model and metrics as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab2-docker-output
+          path: |
+            lab2-docker/output/breast_cancer_rf.joblib
+            lab2-docker/output/metrics.json
+          if-no-files-found: warn
