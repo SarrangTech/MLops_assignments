@@ -91,16 +91,30 @@ faster because the dependency layer is cached (see “Changes I made”).
 
 ### Step 2 — Run the container
 
+Create the `output` folder yourself first, then run:
+
 ```bash
+mkdir -p output
 docker run --rm -v "$(pwd)/output:/app/output" lab2-docker
 ```
 
+- Why `mkdir -p output` matters: if the folder does not exist, Docker
+  creates it as **root**, and the container's non-root user cannot
+  write to it — the run fails with a `PermissionError` (this happens
+  on native Linux; Docker Desktop on Windows/macOS does not hit it).
+  Creating the folder yourself first means you own it and the run
+  succeeds. In Windows PowerShell, create it with
+  `New-Item -ItemType Directory -Force output` instead.
 - `--rm` removes the container when it finishes.
 - `-v "$(pwd)/output:/app/output"` mounts a folder called `output`
   in the current directory on your machine to `/app/output` inside
   the container, so the trained model and metrics are still there
   after the container exits. On Windows PowerShell, use
   `-v "${PWD}/output:/app/output"` instead.
+- Windows **Git Bash** users: Git Bash rewrites the `$(pwd)` path and
+  the files end up in a stray `output;C` folder instead of `output/`.
+  Either run the command in PowerShell (recommended), or prefix it:
+  `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd)/output:/app/output" lab2-docker`
 
 ### Step 3 (optional) — Change the run without rebuilding
 
@@ -108,6 +122,7 @@ The image uses an `ENTRYPOINT`, so training arguments pass straight
 to the script:
 
 ```bash
+mkdir -p output
 docker run --rm -v "$(pwd)/output:/app/output" lab2-docker --n-estimators 200 --test-size 0.25
 ```
 
@@ -116,8 +131,13 @@ docker run --rm -v "$(pwd)/output:/app/output" lab2-docker --n-estimators 200 --
 If you have Docker Compose (included with Docker Desktop):
 
 ```bash
+mkdir -p output
 docker compose up --build
 ```
+
+(Create `output` first, for the same ownership reason as in Step 2 —
+on native Linux, a folder created by Docker instead would be owned
+by root and the run would fail with a `PermissionError`.)
 
 This builds the same image, runs the same training job, and writes
 the outputs into `./output` on your machine.
@@ -276,3 +296,15 @@ written:
 - **No `output` folder after the run** — make sure you ran the
   `docker run` command from inside the `lab2-docker` folder and kept
   the `-v` mount exactly as written in Section 3.
+- **`PermissionError` / `Errno 13` writing to `/app/output`
+  (native Linux)** — the `output` folder was created by Docker as
+  root, and the container runs as the non-root user `appuser`, which
+  cannot write there. Fix it either way: (1) delete that folder,
+  create it yourself before running — `mkdir -p output` — then re-run
+  the Section 3 commands exactly as written; or (2) run the
+  container as your own user id:
+  `docker run --rm --user "$(id -u):$(id -g)" -v "$(pwd)/output:/app/output" lab2-docker`
+- **Files landed in a stray `output;C` folder (Windows)** — you ran
+  the command in Git Bash, which rewrites the mount path. Re-run in
+  PowerShell, or prefix the command with `MSYS_NO_PATHCONV=1`
+  (see Step 2).
