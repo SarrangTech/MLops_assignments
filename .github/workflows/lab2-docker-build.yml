@@ -40,6 +40,16 @@ jobs:
           ls -lh lab2-docker/output/
           cat lab2-docker/output/metrics.json
 
+      - name: Run via Docker Compose (README alternative path)
+        working-directory: lab2-docker
+        run: |
+          mkdir -p output
+          chmod 777 output
+          docker compose up --build
+          test -f output/breast_cancer_rf.joblib
+          test -f output/metrics.json
+          cat output/metrics.json
+
       - name: Run again with different arguments (ENTRYPOINT check, no rebuild)
         run: docker run --rm lab2-docker --n-estimators 10 --output-dir /app/output
 
