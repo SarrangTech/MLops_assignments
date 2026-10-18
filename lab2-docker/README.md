@@ -264,25 +264,37 @@ dataset or model.
 
 ---
 
-## 7. Verification evidence
+## 7. Verification
 
-This lab was run successfully in a clean environment, not just
-written:
+Verification records for this lab are listed below.
 
-- **Locally**, in a fresh virtual environment with the pinned
-  requirements — exit code 0, accuracy 0.9561, F1 0.9655, model and
-  metrics produced (log and metrics in `sample_output/`).
-- **In Docker**, via the GitHub Actions workflow
-  `.github/workflows/lab2-docker-build.yml` in this repo, which
-  builds the image from this folder's `Dockerfile` on a clean
-  runner, runs the container with the output volume mounted,
-  verifies the model and `metrics.json` come out of the container,
-  exercises the Docker Compose path, and re-runs with different
-  arguments. First verified run (2026-10-18, success):
-  https://github.com/SarrangTech/MLops_assignments/actions/runs/39162001130
-  — all runs are on the repo's Actions tab, and each run uploads
-  the model + metrics as the `lab2-docker-output` artifact.
-  Full details: `sample_output/docker_verification.md`.
+**Local run** — fresh virtual environment, dependencies installed
+from the pinned `requirements.txt`, command
+`python src/main.py --output-dir output`:
+
+- Exit code: 0
+- Accuracy: 0.9561, F1 score: 0.9655
+- Files produced: `breast_cancer_rf.joblib`, `metrics.json`
+- Records: `sample_output/run_log.txt`, `sample_output/metrics.json`
+
+**CI runs (GitHub Actions)** — workflow
+`.github/workflows/lab2-docker-build.yml` in this repository. Each
+run checks out the repo on a clean runner, builds the image from
+this folder's `Dockerfile`, runs the container with the output
+volume mounted, verifies the model and `metrics.json` produced,
+and uploads them as the `lab2-docker-output` artifact. Runs from
+the second run onward also exercise the Docker Compose path, and
+every run re-runs the container with different arguments.
+
+| Run | Date | Commit | Result |
+|---|---|---|---|
+| [39162001130](https://github.com/SarrangTech/MLops_assignments/actions/runs/39162001130) | 2026-10-18 | `28d04be` | Success |
+| [39162488482](https://github.com/SarrangTech/MLops_assignments/actions/runs/39162488482) | 2026-10-18 | `0df3e08` | Success |
+| [39162762370](https://github.com/SarrangTech/MLops_assignments/actions/runs/39162762370) | 2026-10-18 | `dbbaae3` | Success |
+| [39166019969](https://github.com/SarrangTech/MLops_assignments/actions/runs/39166019969) | 2026-10-18 | `2f980d7` | Success |
+
+Further runs are listed on the repository's Actions tab.
+Full verification record: `sample_output/docker_verification.md`.
 
 ---
 

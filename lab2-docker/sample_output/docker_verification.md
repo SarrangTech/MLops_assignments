@@ -1,7 +1,8 @@
-# Docker verification evidence — Lab 2
+# Docker verification record — Lab 2
 
-The training script in this folder was verified two independent ways.
-Numbers below are from the verified runs, not estimates.
+This document records the verification runs for the training script
+and Dockerfile in this folder: one local run (Section 1) and the
+GitHub Actions Docker runs (Section 2).
 
 ## 1. Local run (script, pinned dependencies)
 
@@ -25,9 +26,9 @@ Files produced: `breast_cancer_rf.joblib` (317 KB) and `metrics.json`
 (copies of the metrics and the console log are in this `sample_output/`
 folder as `metrics.json` and `run_log.txt`).
 
-A second run with different arguments
+A second local run with different arguments
 (`python src/main.py --n-estimators 10`) also exited 0
-(accuracy 0.9386, F1 0.9510), confirming the run is configurable.
+(accuracy 0.9386, F1 0.9510).
 
 ## 2. Docker run (GitHub Actions, clean runner)
 
@@ -57,6 +58,20 @@ https://github.com/SarrangTech/MLops_assignments/actions/runs/39162488482
   (README alternative path)”: `docker compose up --build` built and
   ran the same job, and the model + `metrics.json` were verified in
   the mounted `output/` folder afterwards.
+
+Third run — 2026-10-18:
+https://github.com/SarrangTech/MLops_assignments/actions/runs/39162762370
+
+- Status: **completed — success** (commit `dbbaae3`)
+- All steps passed, including the Docker Compose step.
+
+Fourth run — 2026-10-18, after README corrections for native Linux
+and Git Bash (folder creation before the run commands, and
+troubleshooting entries):
+https://github.com/SarrangTech/MLops_assignments/actions/runs/39166019969
+
+- Status: **completed — success** (commit `2f980d7`)
+- All steps passed, including the Docker Compose step.
 
 Later runs of the same workflow are listed on the repo's Actions
 tab: https://github.com/SarrangTech/MLops_assignments/actions
