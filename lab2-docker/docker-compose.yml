@@ -1,0 +1,16 @@
+# Lab 2 (Docker) - optional Compose run.
+# The original Lab1 had no Compose file at all. This is an additional
+# Docker change: it gives a checker a one-command run (`docker compose up
+# --build`) that builds the same Dockerfile, passes the training
+# arguments through, and mounts ./output on the host to /app/output in
+# the container so the model and metrics persist after the run.
+services:
+  train:
+    build: .
+    image: lab2-docker
+    container_name: lab2_docker_train
+    environment:
+      OUTPUT_DIR: /app/output
+    volumes:
+      - ./output:/app/output
+    command: ["--output-dir", "/app/output", "--n-estimators", "100"]

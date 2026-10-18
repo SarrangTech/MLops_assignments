@@ -1,0 +1,7 @@
+Dataset: Breast Cancer Wisconsin - 569 samples, 30 features, 2 classes
+Train/test split: 455 train, 114 test
+Accuracy: 0.9561
+F1 score: 0.9655
+Model saved to: output/breast_cancer_rf.joblib
+Metrics saved to: output/metrics.json
+The model training was successful
