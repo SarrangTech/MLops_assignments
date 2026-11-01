@@ -1,7 +1,7 @@
 # Lab 3 — GitHub Actions CI for a self-contained ML training pipeline
 # Location: MLops_assignments/.github/workflows/lab3-ci.yml — the repo root,
 # where GitHub Actions requires workflow files to live.
-# Two stages: a test stage (lint + unit tests) gates a training stage that
+# Two stages: a test stage (lint + the lab's pytest and unittest suites) gates a training stage that
 # runs the pipeline in lab3-github-actions/ and publishes its outputs as
 # artifacts. Both stages run on Python 3.11 and 3.12.
 name: lab3-ci
@@ -51,8 +51,29 @@ jobs:
       - name: Lint
         run: ruff check lab3-github-actions
 
-      - name: Unit tests
-        run: python -m pytest lab3-github-actions/tests -q
+      # The course lab has two test suites (pytest and unittest); both
+      # run here, in this order. The pytest run also covers the training
+      # pipeline's tests in tests/.
+      - name: Unit tests (pytest)
+        run: >
+          python -m pytest lab3-github-actions/test lab3-github-actions/tests
+          -q --junitxml=test-results/lab3-pytest.xml
+
+      - name: Unit tests (unittest)
+        run: >
+          python -m unittest discover
+          -s lab3-github-actions/test -t lab3-github-actions
+
+      # Same step as the original lab's pytest workflow (upload the XML
+      # test report), kept on always() so the report exists for failed
+      # runs too.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab3-test-results-py${{ matrix.python-version }}
+          path: test-results/
+          if-no-files-found: warn
 
   train:
     name: train-and-publish (py${{ matrix.python-version }})
