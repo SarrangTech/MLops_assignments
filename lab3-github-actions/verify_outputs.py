@@ -1,58 +1,55 @@
 """
-Local version of the Lab 3 workflow's smoke check.
+Check that a local Lab 3 training run produced everything CI expects.
 
-The GitHub Actions workflow fails the build if a training run produces no
-model file or no log file. This script performs the same check on a local
-run (and also flags empty files), so the result CI will see can be confirmed
-before pushing:
+The GitHub Actions workflow fails the build if the training step leaves no
+model, no metrics file, or no log. This script performs the same check on a
+local run (and also flags empty files), so the result CI will see can be
+confirmed before pushing:
 
-    python lab3-github-actions/verify_outputs.py [pipeline-dir]
+    python verify_outputs.py [lab-dir]
 
-pipeline-dir defaults to lab1-logging; run from the repository root.
-Exit code 0 means a non-empty model file and a non-empty log file are both
-present; exit code 1 means at least one is missing or empty.
+lab-dir defaults to this script's own folder. Exit code 0 means all three
+outputs exist and are non-empty; exit code 1 means at least one is missing
+or empty.
 """
+import json
 import sys
 from pathlib import Path
 
-
-def find_outputs(base):
-    def files_under(subdir):
-        folder = base / subdir
-        if not folder.is_dir():
-            return []
-        return sorted(p for p in folder.rglob("*") if p.is_file())
-
-    return files_under("models"), files_under("logs")
+EXPECTED = [
+    Path("models") / "model.joblib",
+    Path("reports") / "metrics.json",
+    Path("logs") / "train.log",
+]
 
 
 def main(argv):
-    base = Path(argv[1]) if len(argv) > 1 else Path("lab1-logging")
-    if not base.is_dir():
-        print(f"pipeline directory not found: {base}")
+    base = (
+        Path(argv[1])
+        if len(argv) > 1
+        else Path(__file__).resolve().parent
+    )
+    missing = []
+    for relative in EXPECTED:
+        path = base / relative
+        if path.is_file() and path.stat().st_size > 0:
+            print(f"  ok  {relative} ({path.stat().st_size} bytes)")
+        else:
+            print(f"  MISSING or empty  {relative}")
+            missing.append(relative)
+
+    metrics_path = base / "reports" / "metrics.json"
+    if metrics_path.is_file() and metrics_path.stat().st_size > 0:
+        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        print("\nmetrics from the run:")
+        for key, value in metrics.items():
+            print(f"  {key}: {value}")
+
+    if missing:
+        print("\nSmoke check FAILED: outputs missing or empty.")
         return 1
-
-    models, logs = find_outputs(base)
-    print("Model files:")
-    for path in models:
-        print(f"  - {path} ({path.stat().st_size} bytes)")
-    if not models:
-        print("  - none")
-    print("Log files:")
-    for path in logs:
-        print(f"  - {path} ({path.stat().st_size} bytes)")
-    if not logs:
-        print("  - none")
-
-    empty = [p for p in models + logs if p.stat().st_size == 0]
-    for path in empty:
-        print(f"empty output file: {path}")
-
-    if models and logs and not empty:
-        print("Smoke check passed: model and log outputs are present.")
-        return 0
-    print("Smoke check FAILED: outputs missing or empty.")
-    return 1
+    print("\nSmoke check passed: model, metrics and log are present.")
+    return 0
 
 
 if __name__ == "__main__":
