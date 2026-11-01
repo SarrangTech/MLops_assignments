@@ -3,75 +3,103 @@
 IE7374 / DADS 7305 (MLOps), Lab Assignment 3, based on the **GitHub Actions lab**
 (Session 1) from the course repo `SarrangTech/MLOps`.
 
-The workflow file itself lives at the repository root, where GitHub Actions
-requires it: `.github/workflows/lab3-ci.yml`. This folder documents it.
-It runs the Lab 1 pipeline (`lab1-logging/train.py` — Wine dataset,
-RandomForest) end-to-end on a clean runner on every push and pull request
-to `main`.
+This lab is self-contained: the folder holds a small training pipeline written
+for it (a digits classifier), its unit tests, and its pinned requirements. The
+workflow that runs everything lives at the repository root, where GitHub
+Actions requires it: `.github/workflows/lab3-ci.yml`.
+
+## The pipeline
+
+- `data.py` — loads the digits dataset (it ships with scikit-learn, so nothing
+  is downloaded and every environment sees identical data) and makes a
+  stratified, seeded train/test split.
+- `train.py` — trains a `StandardScaler + RandomForestClassifier` pipeline,
+  evaluates it on the held-out split, and writes three outputs next to itself:
+  `models/model.joblib`, `reports/metrics.json`, `logs/train.log`.
+- `tests/` — pytest tests for the data split (shape, sizes, stratification,
+  reproducibility) and a smoke test that runs a full training pass into a
+  temporary directory and checks the saved model and metrics.
+- `verify_outputs.py` — a local version of the workflow's output smoke check.
+
+## The workflow
+
+Two stages, each on Python 3.11 and 3.12:
+
+1. **lint-and-test** — installs the pinned requirements, lints the lab folder
+   with ruff, and runs the unit tests.
+2. **train-and-publish** — runs only if stage 1 passed (`needs:`). It trains
+   the model, smoke-checks that the model, metrics, and log outputs exist and
+   are non-empty, writes the metrics to the run's summary page, and uploads
+   the outputs as a build artifact.
+
+It triggers on pushes and pull requests to `main`, manually
+(`workflow_dispatch`), and on a weekly schedule (Mondays 13:00 UTC).
 
 ## What a successful run looks like
 
 Open the repository's **Actions** tab and select the `lab3-ci` workflow.
-A successful run shows, for **both** Python 3.11 and Python 3.12:
+A successful run shows four green jobs — lint-and-test and train-and-publish,
+each for Python 3.11 and Python 3.12 — and:
 
-- All steps green: Check out repo → Set up Python → Install dependencies →
-  Run training pipeline → Smoke check model and log outputs →
-  Write run summary → Upload model and logs.
-- A run **Summary** page listing the model and log files the run produced.
-- A downloadable artifact named `wine-model-and-logs-py3.11` (and `-py3.12`)
-  containing `lab1-logging/models/wine_rf.joblib` and the run's log file
-  under `lab1-logging/logs/`.
+- A run **Summary** containing the training metrics as JSON. The local
+  verification run (Python 3.12) produced: accuracy **0.9639**,
+  f1_macro **0.9634**, n_train 1437, n_test 360. CI numbers are identical
+  because the data and the split are seeded.
+- A downloadable artifact named `lab3-model-py3.11` (and `-py3.12`)
+  containing `models/model.joblib`, `reports/metrics.json`, and
+  `logs/train.log`.
 
-No local installation is needed to check the CI behaviour — the runner
-provisions everything. To run the underlying pipeline locally instead:
+## Local run
 
-## Local run (optional)
-
-Requirements: Python 3.11 or 3.12, `pip`.
+Requirements: Python 3.11 or 3.12 and `pip`. Nothing else — the dataset is
+built into scikit-learn.
 
 ```bash
 git clone https://github.com/SarrangTech/MLops_assignments.git
-cd MLops_assignments/lab1-logging
-pip install -r requirements.txt
-python train.py
+cd MLops_assignments
+pip install -r lab3-github-actions/requirements.txt
+
+python -m pytest lab3-github-actions/tests -q   # 4 tests
+python lab3-github-actions/train.py             # writes models/, reports/, logs/
+python lab3-github-actions/verify_outputs.py    # the CI smoke check, locally
 ```
 
-Expected output: training log lines on the console (INFO level), and two
-outputs on disk — `models/wine_rf.joblib` and `logs/train.log`.
-
-To check the outputs the same way the workflow does, run `python lab3-github-actions/verify_outputs.py` from the repo root — it lists the model and log files and exits non-zero if any are missing or empty.
+Expected results: all 4 tests pass; training logs its metrics to the console
+(accuracy ≈ 0.964); `verify_outputs.py` lists the three outputs and prints
+"Smoke check passed". Generated outputs are gitignored — CI publishes them
+as artifacts instead of committing them.
 
 ## What was changed vs. the original lab
 
-The course lab's workflow runs one job on one Python version and uploads
-whatever the run leaves behind. This version changes the CI/CD pipeline
-itself in five ways:
+The course lab's workflow runs a single job on one Python version and
+uploads whatever the run leaves behind. This version rebuilds the CI/CD
+pipeline itself:
 
-1. **Output smoke check.** A dedicated step fails the build if training
-   produced no model file or no log file, instead of a green run uploading
-   an empty artifact.
-2. **Python version matrix.** The job runs on Python 3.11 and 3.12 in
-   parallel (`fail-fast: false`, so one version failing does not hide the
-   other). Artifact names are version-suffixed so the two jobs do not
-   collide.
-3. **Weekly scheduled run.** A Monday 13:00 UTC cron trigger exercises the
-   pipeline in weeks with no pushes.
-4. **Concurrency control.** One active run per branch; a newer push cancels
-   the stale run instead of both finishing and racing on artifacts.
-5. **Run summary.** A step writes the produced model and log file names to
-   the Actions run summary page, so the outputs can be checked without
-   downloading the artifact.
-
-Supporting details: `pip` caching keyed to `lab1-logging/requirements.txt`,
-and artifacts upload with `if: always()` so logs are available even when a
-step fails.
+1. **Two-stage pipeline.** A lint-and-test job gates the training job
+   (`needs:`), so a failing test stops the run before any training happens.
+2. **Lint gate.** ruff checks the whole lab folder in CI (pinned version).
+3. **Unit tests in CI.** The pytest suite runs in the pipeline; the original
+   workflow had no test stage.
+4. **Python version matrix.** Both stages run on 3.11 and 3.12 in parallel
+   (`fail-fast: false`, so one version failing does not hide the other);
+   artifact names are version-suffixed so the jobs do not collide.
+5. **Output smoke check.** The training job fails if any of the model,
+   metrics, or log outputs is missing or empty, instead of a green run
+   uploading an incomplete artifact.
+6. **Run summary.** The training metrics are written to the Actions run
+   summary page, readable without downloading the artifact.
+7. **Concurrency control and schedule.** One active run per branch (a newer
+   push cancels the stale run), plus a weekly scheduled run; `pip` caching
+   is keyed to the lab's `requirements.txt`.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
 | `.github/workflows/lab3-ci.yml` (repo root) | The Lab 3 workflow |
-| `lab3-github-actions/README.md` (this file) | Lab 3 documentation |
+| `lab3-github-actions/data.py` | Dataset loading and seeded split |
+| `lab3-github-actions/train.py` | Training, evaluation, output writing |
+| `lab3-github-actions/tests/` | pytest suite (`test_data.py`, `test_train.py`) |
 | `lab3-github-actions/verify_outputs.py` | Local version of the workflow's smoke check |
-| `lab1-logging/train.py` | The pipeline the workflow runs |
-| `lab1-logging/requirements.txt` | Pinned dependencies the workflow installs |
+| `lab3-github-actions/requirements.txt` | Pinned dependencies |
+| `lab3-github-actions/README.md` | This file |
