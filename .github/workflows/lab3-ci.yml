@@ -1,16 +1,13 @@
-# Lab 3 — GitHub Actions CI for the Lab 1 Wine pipeline
-# Drop at: MLops_assignments/.github/workflows/lab3-ci.yml  (repo root, not inside a lab folder)
-# What it does on every push / PR to main:
-#   1. Checks out the repo on a clean Ubuntu runner
-#   2. Installs lab1-logging/requirements.txt (pip cache speeds reruns)
-#   3. Runs the training pipeline end-to-end and fails the build if it errors
-#   4. Smoke-checks that a model file and a log file were actually produced
-#   5. Writes a short run summary to the Actions run page
-#   6. Uploads the trained model + logs as build artifacts you can download from the Actions tab
+# Lab 3 — GitHub Actions CI for a self-contained ML training pipeline
+# Location: MLops_assignments/.github/workflows/lab3-ci.yml — the repo root,
+# where GitHub Actions requires workflow files to live.
+# Two stages: a test stage (lint + unit tests) gates a training stage that
+# runs the pipeline in lab3-github-actions/ and publishes its outputs as
+# artifacts. Both stages run on Python 3.11 and 3.12.
 name: lab3-ci
 
-# Personal modification 4 (Lab 3): one active run per branch — a newer push
-# cancels the stale run instead of letting both finish and race on artifacts.
+# One active run per branch: a newer push cancels the stale run instead of
+# letting both finish and race on artifacts.
 concurrency:
   group: lab3-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -21,16 +18,15 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
-  # Personal modification 1 (2026-10-13): weekly scheduled run, Mondays 13:00 UTC,
-  # so the pipeline is exercised even in weeks with no pushes.
+  # Weekly scheduled run (Mondays 13:00 UTC), so the pipeline is exercised
+  # even in weeks with no pushes.
   schedule:
     - cron: "0 13 * * 1"
 
 jobs:
-  train-and-verify:
+  test:
+    name: lint-and-test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Personal modification 2 (2026-10-13): matrix over the two Python versions
-    # the course materials use, instead of a single pinned version.
     strategy:
       fail-fast: false
       matrix:
@@ -44,47 +40,74 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: lab1-logging/requirements.txt
+          cache-dependency-path: lab3-github-actions/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r lab1-logging/requirements.txt
+        run: pip install -r lab3-github-actions/requirements.txt
 
-      - name: Run training pipeline
-        working-directory: lab1-logging
-        run: python train.py
+      - name: Install linter
+        run: pip install ruff==0.17.3
 
-      # Personal modification 3 (2026-10-13): smoke check — fail the build if the
-      # training run produced no model file or no log file, instead of uploading
-      # an empty artifact and calling it green.
-      - name: Smoke check model and log outputs
+      - name: Lint
+        run: ruff check lab3-github-actions
+
+      - name: Unit tests
+        run: python -m pytest lab3-github-actions/tests -q
+
+  train:
+    name: train-and-publish (py${{ matrix.python-version }})
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: lab3-github-actions/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r lab3-github-actions/requirements.txt
+
+      - name: Train model
+        run: python lab3-github-actions/train.py
+
+      # Fail the build if training left any output missing or empty,
+      # instead of uploading an incomplete artifact and calling it green.
+      - name: Smoke check outputs
         run: |
-          test -d lab1-logging/models && find lab1-logging/models -type f | grep -q . || { echo "No model file produced"; exit 1; }
-          test -d lab1-logging/logs && find lab1-logging/logs -type f | grep -q . || { echo "No log file produced"; exit 1; }
-          echo "Outputs present:"
-          find lab1-logging/models lab1-logging/logs -type f
+          test -s lab3-github-actions/models/model.joblib
+          test -s lab3-github-actions/reports/metrics.json
+          test -s lab3-github-actions/logs/train.log
+          echo "All outputs present and non-empty."
 
-      # Personal modification 5 (Lab 3): publish what the run produced to the
-      # run's summary page, so a checker can see the outputs without
-      # downloading the artifact first.
+      # Publish the run's metrics to the run summary page, so the result
+      # can be read without downloading the artifact first.
       - name: Write run summary
         if: always()
         run: |
           {
-            echo "## Lab 3 CI — training outputs (Python ${{ matrix.python-version }})"
+            echo "## Lab 3 CI — training results (Python ${{ matrix.python-version }})"
             echo ""
-            echo "**Model files:**"
-            find lab1-logging/models -type f 2>/dev/null | sed 's/^/- /' || echo "- none"
-            echo ""
-            echo "**Log files:**"
-            find lab1-logging/logs -type f 2>/dev/null | sed 's/^/- /' || echo "- none"
+            echo '```json'
+            cat lab3-github-actions/reports/metrics.json 2>/dev/null || echo "{}"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload model and logs
+      - name: Upload model, metrics and log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wine-model-and-logs-py${{ matrix.python-version }}
+          name: lab3-model-py${{ matrix.python-version }}
           path: |
-            lab1-logging/models/
-            lab1-logging/logs/
+            lab3-github-actions/models/
+            lab3-github-actions/reports/
+            lab3-github-actions/logs/
           if-no-files-found: warn
