@@ -15,12 +15,12 @@ Open the repository's **Actions** tab and select the `lab3-ci` workflow.
 A successful run shows, for **both** Python 3.11 and Python 3.12:
 
 - All steps green: Check out repo → Set up Python → Install dependencies →
-Run training pipeline → Smoke check model and log outputs →
-Write run summary → Upload model and logs.
+  Run training pipeline → Smoke check model and log outputs →
+  Write run summary → Upload model and logs.
 - A run **Summary** page listing the model and log files the run produced.
 - A downloadable artifact named `wine-model-and-logs-py3.11` (and `-py3.12`)
-containing `lab1-logging/models/wine_rf.joblib` and the run's log file
-under `lab1-logging/logs/`.
+  containing `lab1-logging/models/wine_rf.joblib` and the run's log file
+  under `lab1-logging/logs/`.
 
 No local installation is needed to check the CI behaviour — the runner
 provisions everything. To run the underlying pipeline locally instead:
@@ -48,19 +48,19 @@ whatever the run leaves behind. This version changes the CI/CD pipeline
 itself in five ways:
 
 1. **Output smoke check.** A dedicated step fails the build if training
-produced no model file or no log file, instead of a green run uploading
-an empty artifact.
+   produced no model file or no log file, instead of a green run uploading
+   an empty artifact.
 2. **Python version matrix.** The job runs on Python 3.11 and 3.12 in
-parallel (`fail-fast: false`, so one version failing does not hide the
-other). Artifact names are version-suffixed so the two jobs do not
-collide.
+   parallel (`fail-fast: false`, so one version failing does not hide the
+   other). Artifact names are version-suffixed so the two jobs do not
+   collide.
 3. **Weekly scheduled run.** A Monday 13:00 UTC cron trigger exercises the
-pipeline in weeks with no pushes.
+   pipeline in weeks with no pushes.
 4. **Concurrency control.** One active run per branch; a newer push cancels
-the stale run instead of both finishing and racing on artifacts.
+   the stale run instead of both finishing and racing on artifacts.
 5. **Run summary.** A step writes the produced model and log file names to
-the Actions run summary page, so the outputs can be checked without
-downloading the artifact.
+   the Actions run summary page, so the outputs can be checked without
+   downloading the artifact.
 
 Supporting details: `pip` caching keyed to `lab1-logging/requirements.txt`,
 and artifacts upload with `if: always()` so logs are available even when a
