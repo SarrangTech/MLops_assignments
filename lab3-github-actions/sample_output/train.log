@@ -1,0 +1,9 @@
+2026-11-01 18:15:59,362 INFO lab3.train: starting training run
+2026-11-01 18:16:00,287 INFO lab3.train: model: StandardScaler + RandomForestClassifier(n_estimators=200)
+2026-11-01 18:16:00,287 INFO lab3.train: dataset: sklearn digits (1797 samples, 64 features, 10 classes)
+2026-11-01 18:16:00,287 INFO lab3.train: n_train: 1437
+2026-11-01 18:16:00,288 INFO lab3.train: n_test: 360
+2026-11-01 18:16:00,288 INFO lab3.train: accuracy: 0.9639
+2026-11-01 18:16:00,288 INFO lab3.train: f1_macro: 0.9634
+2026-11-01 18:16:00,288 INFO lab3.train: model saved to /home/hatch/workspace/lab3-fresh/lab3-github-actions/models/model.joblib
+2026-11-01 18:16:00,288 INFO lab3.train: metrics saved to /home/hatch/workspace/lab3-fresh/lab3-github-actions/reports/metrics.json

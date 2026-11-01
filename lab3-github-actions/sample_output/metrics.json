@@ -1,0 +1,8 @@
+{
+  "model": "StandardScaler + RandomForestClassifier(n_estimators=200)",
+  "dataset": "sklearn digits (1797 samples, 64 features, 10 classes)",
+  "n_train": 1437,
+  "n_test": 360,
+  "accuracy": 0.9639,
+  "f1_macro": 0.9634
+}

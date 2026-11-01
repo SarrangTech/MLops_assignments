@@ -1,0 +1,8 @@
+# Lint configuration for Lab 3 (used by CI's `ruff check lab3-github-actions`).
+#
+# TRY004 is ignored: the course lab's calculator raises ValueError for
+# non-numeric input by design — its docstrings document ValueError and
+# both of the lab's test suites assert it — so this submission keeps
+# that behaviour instead of switching to TypeError.
+[lint]
+ignore = ["TRY004"]
