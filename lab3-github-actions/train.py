@@ -13,11 +13,12 @@ import logging
 from pathlib import Path
 
 import joblib
-from data import load_dataset, split_dataset
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
+from data import load_dataset, split_dataset
 
 BASE = Path(__file__).resolve().parent
 MODEL_PATH = BASE / "models" / "model.joblib"

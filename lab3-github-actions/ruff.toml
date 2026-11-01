@@ -6,3 +6,12 @@
 # that behaviour instead of switching to TypeError.
 [lint]
 ignore = ["TRY004"]
+
+# The pipeline's own modules are first-party imports. Declared
+# explicitly so import sorting is identical in every checkout —
+# without this, whether `data` counts as first-party depends on the
+# checkout context, and local and CI lint results can disagree
+# (they did: run 41363001190 failed on I001 in files that passed
+# locally).
+[lint.isort]
+known-first-party = ["data", "src", "train"]
