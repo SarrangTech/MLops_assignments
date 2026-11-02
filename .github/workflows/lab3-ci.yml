@@ -1,30 +1,34 @@
-# Lab 3 — GitHub Actions CI for a self-contained ML training pipeline
-# Location: MLops_assignments/.github/workflows/lab3-ci.yml — the repo root,
-# where GitHub Actions requires workflow files to live.
-# Two stages: a test stage (lint + the lab's pytest and unittest suites) gates a training stage that
-# runs the pipeline in lab3-github-actions/ and publishes its outputs as
-# artifacts. Both stages run on Python 3.11 and 3.12.
-name: lab3-ci
+# Lab 3 - GitHub Actions: CI/CD for an ML training pipeline.
+#
+# Project: diabetes progression regression (lab3-github-actions/).
+# Stage 1 (lint-and-test) lints the project and runs its pytest suite
+# on Python 3.11 and 3.12. Stage 2 (train-and-evaluate) runs only if
+# stage 1 passes: it generates a run timestamp, trains the pipeline
+# (model comparison + tuning + MLflow tracking), evaluates the
+# timestamp-versioned model on the held-out test split, smoke-checks
+# the outputs, writes the results to the run summary, and uploads the
+# model, metrics, and reports as artifacts.
 
-# One active run per branch: a newer push cancels the stale run instead of
-# letting both finish and race on artifacts.
+name: Lab 3 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * 1"
+
+permissions:
+  contents: read
+
 concurrency:
   group: lab3-ci-${{ github.ref }}
   cancel-in-progress: true
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch: {}
-  # Weekly scheduled run (Mondays 13:00 UTC), so the pipeline is exercised
-  # even in weeks with no pushes.
-  schedule:
-    - cron: "0 13 * * 1"
-
 jobs:
-  test:
+  lint-and-test:
     name: lint-and-test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
@@ -32,10 +36,10 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - name: Check out repo
+      - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -43,51 +47,38 @@ jobs:
           cache-dependency-path: lab3-github-actions/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r lab3-github-actions/requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r lab3-github-actions/requirements.txt
+          pip install ruff==0.17.3
 
-      - name: Install linter
-        run: pip install ruff==0.17.3
-
-      - name: Lint
+      - name: Lint (ruff)
         run: ruff check lab3-github-actions
 
-      # The course lab has two test suites (pytest and unittest); both
-      # run here, in this order. The pytest run also covers the training
-      # pipeline's tests in tests/.
       - name: Unit tests (pytest)
-        run: >
-          python -m pytest lab3-github-actions/test lab3-github-actions/tests
-          -q --junitxml=test-results/lab3-pytest.xml
+        run: python -m pytest lab3-github-actions/tests -q --junitxml=test-results/lab3-pytest.xml
 
-      - name: Unit tests (unittest)
-        run: >
-          python -m unittest discover
-          -s lab3-github-actions/test -t lab3-github-actions
-
-      # Same step as the original lab's pytest workflow (upload the XML
-      # test report), kept on always() so the report exists for failed
-      # runs too.
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lab3-test-results-py${{ matrix.python-version }}
           path: test-results/
-          if-no-files-found: warn
+          if-no-files-found: ignore
 
-  train:
-    name: train-and-publish (py${{ matrix.python-version }})
-    needs: test
+  train-and-evaluate:
+    name: train-and-evaluate (py${{ matrix.python-version }})
+    needs: lint-and-test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - name: Check out repo
+      - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -95,40 +86,36 @@ jobs:
           cache-dependency-path: lab3-github-actions/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r lab3-github-actions/requirements.txt
-
-      - name: Train model
-        run: python lab3-github-actions/train.py
-
-      # Fail the build if training left any output missing or empty,
-      # instead of uploading an incomplete artifact and calling it green.
-      - name: Smoke check outputs
         run: |
-          test -s lab3-github-actions/models/model.joblib
-          test -s lab3-github-actions/reports/metrics.json
-          test -s lab3-github-actions/logs/train.log
-          echo "All outputs present and non-empty."
+          python -m pip install --upgrade pip
+          pip install -r lab3-github-actions/requirements.txt
 
-      # Publish the run's metrics to the run summary page, so the result
-      # can be read without downloading the artifact first.
-      - name: Write run summary
-        if: always()
-        run: |
-          {
-            echo "## Lab 3 CI — training results (Python ${{ matrix.python-version }})"
-            echo ""
-            echo '```json'
-            cat lab3-github-actions/reports/metrics.json 2>/dev/null || echo "{}"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Generate run timestamp
+        id: ts
+        run: echo "ts=$(date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
 
-      - name: Upload model, metrics and log
-        if: always()
+      - name: Train (compare, tune, track, version)
+        working-directory: lab3-github-actions
+        run: python -m src.train --timestamp "${{ steps.ts.outputs.ts }}"
+
+      - name: Evaluate on the held-out test split
+        working-directory: lab3-github-actions
+        run: python -m src.evaluate --timestamp "${{ steps.ts.outputs.ts }}"
+
+      - name: Smoke-check the outputs
+        working-directory: lab3-github-actions
+        run: python verify_outputs.py --timestamp "${{ steps.ts.outputs.ts }}"
+
+      - name: Write results to the run summary
+        working-directory: lab3-github-actions
+        run: python summarize_run.py --timestamp "${{ steps.ts.outputs.ts }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the model, metrics, and reports
         uses: actions/upload-artifact@v4
         with:
           name: lab3-model-py${{ matrix.python-version }}
           path: |
             lab3-github-actions/models/
+            lab3-github-actions/metrics/
             lab3-github-actions/reports/
-            lab3-github-actions/logs/
-          if-no-files-found: warn
+          if-no-files-found: error
