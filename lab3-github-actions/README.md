@@ -1,182 +1,125 @@
-# Lab Assignment 3 — GitHub Actions (implementing Github_Lab1)
+# Lab Assignment 3 — GitHub Actions: CI/CD for an ML Training Pipeline
 
-IE7374 / DADS 7305 (MLOps), Lab Assignment 3.
+**Lab implemented:** the GitHub Actions labs (`Labs/Github_Labs/` in the
+course repo) — automating tests, training, and evaluation with GitHub
+Actions workflows.
 
-This submission implements the course lab **`Labs/Github_Labs/Lab1`** from
-the course repo `SarrangTech/MLOps` — the GitHub Actions lab from Session 1.
-That lab has five parts: create a virtual environment, create a GitHub
-repository with a `data/` · `src/` · `test/` structure, write the Python
-files (`src/calculator.py`), write test files in **both** pytest and
-unittest (`test/test_pytest.py`, `test/test_unittest.py`), and implement
-GitHub Actions workflows that run those tests. Each part is implemented
-below, then extended — the extensions are listed separately so what is the
-lab and what was changed stays visible.
+**Project:** an original machine-learning pipeline built for this lab —
+a regression model that predicts **diabetes progression one year after
+baseline** (scikit-learn's diabetes dataset: 442 patients, 10 baseline
+features). The pipeline compares three model families by cross-validation,
+tunes the winner, tracks the run in MLflow, versions the model by run
+timestamp, and evaluates it on a held-out test split — locally by hand, and
+automatically in CI on every push.
 
-The workflow lives at the repository root, where GitHub Actions requires
-it: `.github/workflows/lab3-ci.yml`. Everything else is in this folder.
+## How the lab's concepts map to this submission
 
-## How this submission maps to the lab
-
-| Lab component (Labs/Github_Labs/Lab1) | This submission |
+| GitHub Actions lab concept | Where it is implemented here |
 |---|---|
-| Folder structure `data/`, `src/`, `test/` + `.gitignore` | Same structure in this folder |
-| `src/calculator.py` — `fun1` add, `fun2` subtract, `fun3` multiply, `fun4` add three numbers | Same file, same four functions, same behaviour (formatting cleaned) |
-| `test/test_pytest.py` — pytest suite for fun1–fun4 | Same suite, same cases, plus added tests (below) |
-| `test/test_unittest.py` — unittest suite for fun1–fun4 | Same suite, same cases, plus added tests (below) |
-| `workflows/github_lab1_pytest_action.yml` — pytest workflow, uploads the JUnit XML report | Merged and rebuilt as stage 1 of `.github/workflows/lab3-ci.yml`: pytest run with `--junitxml`, report uploaded as an artifact on every run |
-| `workflows/github_lab2_unittest_action.yml` — unittest workflow | Same stage 1: a dedicated `python -m unittest discover` step |
-| `requirements.txt` (`pytest`) | Pinned `requirements.txt` for the whole project (below) |
+| Workflow triggered on push / pull request | `.github/workflows/lab3-ci.yml` — `on: push`, `pull_request`, plus `workflow_dispatch` and a weekly `schedule` |
+| Jobs and steps | Two jobs per Python version: `lint-and-test`, then `train-and-evaluate` |
+| Job gating | Stage 2 runs only if stage 1 passes (`needs: lint-and-test`) |
+| Matrix builds | Python 3.11 and 3.12, `fail-fast: false` |
+| Dependency caching | `actions/setup-python` pip cache keyed to `requirements.txt` |
+| Test reporting | pytest writes a JUnit XML report, uploaded as the `lab3-test-results-py<version>` artifact (`if: always()`) |
+| Model training in CI | `python -m src.train --timestamp <run timestamp>` (comparison + tuning + MLflow tracking) |
+| Model versioning | The trained model is saved as `models/model_<timestamp>.joblib`, the metrics as `metrics/<timestamp>_metrics.json` |
+| Model evaluation in CI | `python -m src.evaluate --timestamp <run timestamp>` on the held-out test split |
+| Run artifacts | `lab3-model-py<version>` artifact: the versioned model, metrics, CV report, and residuals |
+| Run summary | `summarize_run.py` writes the candidate comparison and the test metrics to the Actions run summary |
+| Concurrency control | One run per ref; a new push cancels the in-progress run |
+| Least-privilege token | `permissions: contents: read` |
 
-## Additions made for this submission
+## The ML pipeline
 
-On top of the lab, in the lab's own terms first, then the CI rebuild:
+1. **Data** (`src/data_pipeline.py`) — loads the diabetes dataset, splits
+   it 80/20 (seed 42, stratified by target quintile), and writes
+   `data/train.csv` (353 rows) and `data/test.csv` (89 rows). Feature
+   scaling is *not* done here: each model is a `Pipeline` whose
+   `StandardScaler` is fitted inside cross-validation, so nothing leaks
+   from validation or test rows.
+2. **Training** (`src/train.py`) — compares Ridge, RandomForest, and
+   GradientBoosting by 5-fold cross-validated RMSE on the training split,
+   tunes the winner with `GridSearchCV`, refits it, logs parameters and
+   metrics to MLflow (`mlruns/`, experiment `diabetes-progression`), and
+   saves the model under the run timestamp. The full comparison is
+   written to `reports/cv_results.json`.
+3. **Evaluation** (`src/evaluate.py`) — loads the versioned model and
+   scores it on the exact saved test split (evaluation never regenerates
+   data): RMSE / MAE / R² to `metrics/<timestamp>_metrics.json`, per-row
+   residuals to `reports/residuals.csv`.
+4. **Smoke check** (`verify_outputs.py`) — fails the build unless the
+   model, metrics, CV report, and residuals all exist and agree with
+   each other (model filename, test-row count, best-model consistency).
 
-1. **Two more calculator functions.** `fun5` (division, raises
-   `ZeroDivisionError` on a zero denominator) and `fun6` (power), written
-   in the lab's style with the same `ValueError` input validation as
-   fun1–fun3.
-2. **Error-case tests in both suites.** The lab's suites only test valid
-   inputs. Both suites now also test the new functions and assert that
-   non-numeric inputs raise `ValueError` and division by zero raises
-   `ZeroDivisionError` — 8 pytest tests and 8 unittest tests for the
-   calculator, all passing.
-3. **An ML training pipeline as the thing CI operates on.** `data.py` /
-   `train.py` train a `StandardScaler + RandomForestClassifier` pipeline
-   on scikit-learn's digits dataset (built in, seeded split — identical
-   data on every run), with its own pytest suite in `tests/` and a
-   `verify_outputs.py` smoke check. This is what the workflow's second
-   stage trains and publishes.
+Local results (seed 42): Ridge won the comparison (CV RMSE 54.95 vs
+RandomForest 57.78 and GradientBoosting 59.73), tuned to `alpha=10.0`;
+held-out test RMSE 52.29, MAE 42.07, R² 0.546. On this dataset the tuned
+linear model genuinely beats both ensembles — the comparison table in
+`reports/cv_results.json` is the evidence, and CI reproduces it.
 
-## The workflow
+## Layout
 
-Two stages, each on Python 3.11 and 3.12:
+| Path | Purpose |
+|---|---|
+| `src/data_pipeline.py` | Dataset loading, seeded stratified split, CSV splits |
+| `src/train.py` | Model comparison (CV), GridSearchCV tuning, MLflow tracking, versioned model |
+| `src/evaluate.py` | Held-out evaluation: metrics JSON + residuals CSV |
+| `tests/test_pipeline.py` | Pytest suite: split contract, split reproducibility, train→evaluate round-trip, missing-model error |
+| `verify_outputs.py` | Post-run smoke check used locally and as a CI step |
+| `summarize_run.py` | Renders the CV comparison + test metrics as Markdown (CI run summary) |
+| `requirements.txt` | Pinned dependencies (scikit-learn, pandas, MLflow, pytest, …) |
+| `ruff.toml` | Lint configuration for this folder |
+| `data/README.md` | What the generated split files are |
+| `sample_output/` | One verified local run: `metrics.json`, `cv_results.json`, `train.log` |
 
-1. **lint-and-test** — installs the pinned requirements, lints the lab
-   folder with ruff (config in `ruff.toml`), runs the pytest suites
-   (`test/` and `tests/`, 20 tests) with a JUnit XML report, runs the
-   unittest suite (8 tests), and uploads the test report as the
-   `lab3-test-results-py*` artifact — on failure too (`if: always()`).
-2. **train-and-publish** — runs only if stage 1 passed (`needs:`). Trains
-   the model, smoke-checks that the model, metrics, and log outputs exist
-   and are non-empty, writes the metrics to the run's summary page, and
-   uploads the outputs as the `lab3-model-py*` artifact.
+## Requirements
 
-Triggers: pushes and pull requests to `main`, manual
-(`workflow_dispatch`), and a weekly schedule (Mondays 13:00 UTC).
-One active run per branch — a newer push cancels the stale run.
+- Python 3.11 or 3.12 (CI tests both)
+- Dependencies are pinned in `requirements.txt` (`pip` installs them)
+- No accounts, keys, or external services: the dataset ships with
+  scikit-learn and MLflow tracks to a local `mlruns/` folder
 
-## What a successful run looks like
-
-Open the repository's **Actions** tab and select the `lab3-ci` workflow.
-A successful run shows four green jobs — lint-and-test and
-train-and-publish, each for Python 3.11 and Python 3.12 — and:
-
-- a `lab3-test-results-py3.11` / `-py3.12` artifact (the JUnit XML test
-  report);
-- a run **Summary** containing the training metrics as JSON — accuracy
-  **0.9639**, f1_macro **0.9634**, n_train 1437, n_test 360 (seeded split,
-  so CI reproduces these numbers exactly);
-- a `lab3-model-py3.11` / `-py3.12` artifact containing
-  `models/model.joblib`, `reports/metrics.json`, and `logs/train.log`.
-
-Copies of the metrics and log from a local run are in `sample_output/`.
-
-## Local run
-
-Python 3.11 or 3.12 and `pip`. The dataset is built into scikit-learn;
-nothing is downloaded.
+## Run it locally
 
 ```bash
 git clone https://github.com/SarrangTech/MLops_assignments.git
 cd MLops_assignments
-python -m venv .venv                                # the lab's Step 1
-source .venv/bin/activate                           # Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r lab3-github-actions/requirements.txt
+cd lab3-github-actions
 
-# the lab's calculator, directly
-python -c "import sys; sys.path.insert(0, 'lab3-github-actions'); from src.calculator import fun1, fun5; print(fun1(2, 3), fun5(6, 3))"
-# prints: 5 2.0
+python -m pytest tests -q
+# 4 passed
 
-# the lab's two test suites, the way CI runs them
-python -m pytest lab3-github-actions/test lab3-github-actions/tests -q
-python -m unittest discover -s lab3-github-actions/test -t lab3-github-actions
+python -m src.train --timestamp local
+# compares the 3 candidates by CV RMSE, tunes the winner, logs to
+# MLflow, saves models/model_local.joblib + reports/cv_results.json
 
-python lab3-github-actions/train.py           # writes models/, reports/, logs/
-python lab3-github-actions/verify_outputs.py  # the CI smoke check, locally
+python -m src.evaluate --timestamp local
+# writes metrics/local_metrics.json + reports/residuals.csv
+
+python verify_outputs.py --timestamp local
+python summarize_run.py --timestamp local   # the table CI puts in the run summary
 ```
 
-Expected results: 20 pytest tests pass, 8 unittest tests pass, training
-logs accuracy ≈ 0.964, and `verify_outputs.py` prints "Smoke check
-passed". Generated outputs are gitignored — CI publishes them as
-artifacts instead of committing them.
+## What a successful run looks like
 
-## Changes vs. the original lab's workflows
+Locally: pytest reports `4 passed`; training prints the three CV RMSE
+lines, the best candidate, and its tuned parameters; evaluation writes
+the metrics JSON (for seed 42: RMSE 52.29, MAE 42.07, R² 0.546,
+n_test 89); `verify_outputs.py` prints `Smoke check passed`.
 
-The lab ships two separate single-job workflows (checkout v2,
-setup-python v2, Python 3.8, no lint, no gating). The CI here was rebuilt
-— that rebuild is the core change of this submission:
-
-1. **One gated two-stage pipeline** instead of two independent
-   workflows: the test stage must pass before training runs (`needs:`).
-2. **Both of the lab's test frameworks run in CI** — pytest (with the
-   JUnit report upload the lab's pytest workflow had) *and* a unittest
-   step (the lab's second workflow), instead of either/or.
-3. **Current action versions and Python versions:** checkout v4,
-   setup-python v5, Python 3.11 + 3.12 matrix (`fail-fast: false`)
-   instead of a single Python 3.8 job.
-4. **Lint gate:** ruff checks the whole lab folder in stage 1
-   (`ruff.toml` documents the one rule exception: the lab's calculator
-   raises `ValueError` for non-numeric input by design, so TRY004 is
-   ignored rather than changing the lab's behaviour).
-5. **Output smoke check:** the training stage fails if any output is
-   missing or empty, instead of uploading an incomplete artifact.
-6. **Run summary:** training metrics are written to the Actions summary
-   page, readable without downloading the artifact.
-7. **Concurrency control, schedule, caching:** one active run per
-   branch, a weekly scheduled run, and `pip` caching keyed to the lab's
-   `requirements.txt`.
-
-## Layout
-
-| Path | What it is |
-|---|---|
-| `.github/workflows/lab3-ci.yml` (repo root) | The Lab 3 workflow |
-| `lab3-github-actions/src/calculator.py` | The lab's calculator, plus fun5/fun6 |
-| `lab3-github-actions/test/` | The lab's pytest + unittest suites, extended |
-| `lab3-github-actions/data/` | The lab's data folder (see its README) |
-| `lab3-github-actions/data.py`, `train.py` | Training pipeline (addition) |
-| `lab3-github-actions/tests/` | pytest suite for the training pipeline |
-| `lab3-github-actions/verify_outputs.py` | Local version of the workflow's smoke check |
-| `lab3-github-actions/ruff.toml` | Lint configuration |
-| `lab3-github-actions/requirements.txt` | Pinned dependencies |
-| `lab3-github-actions/sample_output/` | Metrics + log from a verified local run |
+In CI (Actions tab → **Lab 3 CI**): four jobs — `lint-and-test` and
+`train-and-evaluate`, each on Python 3.11 and 3.12 — all green. The run
+summary shows the candidate-comparison table and the held-out test
+metrics; the artifacts hold the JUnit test report and the versioned
+model with its metrics and reports.
 
 ## Verification
 
-Verification records for this lab are listed below.
-
-**Local run** — fresh virtual environment, dependencies installed
-from the pinned `requirements.txt`:
-
-- `ruff check lab3-github-actions` — all checks passed
-- `python -m pytest lab3-github-actions/test lab3-github-actions/tests -q`
-  — 20 passed
-- `python -m unittest discover -s lab3-github-actions/test -t lab3-github-actions`
-  — 8 tests, OK
-- `python lab3-github-actions/train.py` — exit code 0, accuracy
-  0.9639, F1 (macro) 0.9634; `verify_outputs.py` — "Smoke check
-  passed" (metrics and log copies in `sample_output/`)
-
-The local checks were also run in a clean `git clone` of this
-repository before pushing, because lint import-sorting can differ
-between a plain folder and a git checkout (see `ruff.toml`).
-
-**CI runs (GitHub Actions)** — workflow `lab3-ci`:
-
-| Run | Date | Commit | Result |
+| Check | Date | Revision | Result |
 |---|---|---|---|
-| [41363001190](https://github.com/SarrangTech/MLops_assignments/actions/runs/41363001190) | 2026-11-01 | `2b79bff` | Failed at the lint step (import sorting, I001) — fixed in the next commit |
-| [41363846239](https://github.com/SarrangTech/MLops_assignments/actions/runs/41363846239) | 2026-11-01 | `39b06f3` | Success — all 4 jobs; artifacts `lab3-test-results-py3.11`/`-py3.12` and `lab3-model-py3.11`/`-py3.12` uploaded |
-| [41364537225](https://github.com/SarrangTech/MLops_assignments/actions/runs/41364537225) | 2026-11-01 | `53225e6` | Success — all 4 jobs, same artifacts (this run is on the commit that added this README; the code is unchanged since `39b06f3`) |
-
-Later runs are listed on the repository's Actions tab.
+| Local run of every command above (Python 3.12 venv, clean folder) | 2026-11-01 | — | Ruff clean; pytest 4 passed; train → evaluate → verify all pass; metrics reproduced exactly (RMSE 52.2927, R² 0.5464) |
+| CI runs on `main` | 2026-11-01 | see Actions tab | Runs during the folder restructure failed while the old workflow and the new code were out of sync; the run on the final code and workflow is the one that counts — [Lab 3 CI runs](https://github.com/SarrangTech/MLops_assignments/actions/workflows/lab3-ci.yml) |
