@@ -89,8 +89,13 @@ nothing is downloaded.
 ```bash
 git clone https://github.com/SarrangTech/MLops_assignments.git
 cd MLops_assignments
-python -m venv .venv && source .venv/bin/activate   # the lab's Step 1
+python -m venv .venv                                # the lab's Step 1
+source .venv/bin/activate                           # Windows: .venv\Scripts\activate
 pip install -r lab3-github-actions/requirements.txt
+
+# the lab's calculator, directly
+python -c "import sys; sys.path.insert(0, 'lab3-github-actions'); from src.calculator import fun1, fun5; print(fun1(2, 3), fun5(6, 3))"
+# prints: 5 2.0
 
 # the lab's two test suites, the way CI runs them
 python -m pytest lab3-github-actions/test lab3-github-actions/tests -q
@@ -172,5 +177,6 @@ between a plain folder and a git checkout (see `ruff.toml`).
 |---|---|---|---|
 | [41363001190](https://github.com/SarrangTech/MLops_assignments/actions/runs/41363001190) | 2026-11-01 | `2b79bff` | Failed at the lint step (import sorting, I001) — fixed in the next commit |
 | [41363846239](https://github.com/SarrangTech/MLops_assignments/actions/runs/41363846239) | 2026-11-01 | `39b06f3` | Success — all 4 jobs; artifacts `lab3-test-results-py3.11`/`-py3.12` and `lab3-model-py3.11`/`-py3.12` uploaded |
+| [41364537225](https://github.com/SarrangTech/MLops_assignments/actions/runs/41364537225) | 2026-11-01 | `53225e6` | Success — all 4 jobs, same artifacts (this run is on the commit that added this README; the code is unchanged since `39b06f3`) |
 
 Later runs are listed on the repository's Actions tab.
