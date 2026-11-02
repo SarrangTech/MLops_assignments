@@ -1,13 +1,13 @@
 # data/
 
-In the course lab's folder structure, `data/` holds the project's data
-files. This submission's datasets need no files here:
+`src/data_pipeline.py` writes two generated files here at run time:
 
-- the calculator project (the lab itself) uses no data;
-- the training pipeline's digits dataset ships with scikit-learn, so
-  nothing is downloaded or stored.
+- `train.csv` — the training split (353 rows)
+- `test.csv` — the held-out test split (89 rows)
 
-The folder is kept so the layout matches the lab's structure
-(`data/`, `src/`, `test/`). It deliberately has no `__init__.py`:
-the training pipeline's module is `../data.py`, and a `data` package
-here would shadow it on import.
+Both come from scikit-learn's diabetes dataset (442 patients, 10
+baseline features, target = disease progression after one year),
+split 80/20 with seed 42 and stratified by target quintile. They are
+git-ignored on purpose: the split is reproducible from the seed, and
+CI regenerates them on every run so the evaluated rows are always
+the ones the current code produced.

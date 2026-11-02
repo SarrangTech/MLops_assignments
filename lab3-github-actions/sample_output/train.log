@@ -1,9 +1,47 @@
-2026-11-01 18:15:59,362 INFO lab3.train: starting training run
-2026-11-01 18:16:00,287 INFO lab3.train: model: StandardScaler + RandomForestClassifier(n_estimators=200)
-2026-11-01 18:16:00,287 INFO lab3.train: dataset: sklearn digits (1797 samples, 64 features, 10 classes)
-2026-11-01 18:16:00,287 INFO lab3.train: n_train: 1437
-2026-11-01 18:16:00,288 INFO lab3.train: n_test: 360
-2026-11-01 18:16:00,288 INFO lab3.train: accuracy: 0.9639
-2026-11-01 18:16:00,288 INFO lab3.train: f1_macro: 0.9634
-2026-11-01 18:16:00,288 INFO lab3.train: model saved to /home/hatch/workspace/lab3-fresh/lab3-github-actions/models/model.joblib
-2026-11-01 18:16:00,288 INFO lab3.train: metrics saved to /home/hatch/workspace/lab3-fresh/lab3-github-actions/reports/metrics.json
+$ python -m src.train --timestamp localrun1
+INFO Training split: 353 rows, 10 features
+INFO ridge: CV RMSE 54.9549 (+/- 3.9991)
+INFO random_forest: CV RMSE 57.7770 (+/- 5.5608)
+INFO gradient_boosting: CV RMSE 59.7298 (+/- 5.6206)
+INFO Best candidate by CV RMSE: ridge
+INFO Best params: {'model__alpha': 10.0}
+INFO Saved versioned model: /home/hatch/workspace/lab3-v2/lab3-github-actions/models/model_localrun1.joblib
+{
+  "candidates": {
+    "ridge": {
+      "cv_rmse_mean": 54.9549,
+      "cv_rmse_std": 3.9991
+    },
+    "random_forest": {
+      "cv_rmse_mean": 57.777,
+      "cv_rmse_std": 5.5608
+    },
+    "gradient_boosting": {
+      "cv_rmse_mean": 59.7298,
+      "cv_rmse_std": 5.6206
+    }
+  },
+  "best_model": "ridge",
+  "best_params": {
+    "model__alpha": "10.0"
+  },
+  "best_cv_rmse": 54.9495,
+  "n_train": 353,
+  "features": [
+    "age",
+    "sex",
+    "bmi",
+    "bp",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6"
+  ],
+  "seed": 42,
+  "cv_folds": 5
+}
+
+$ python -m src.evaluate --timestamp localrun1
+Wrote /home/hatch/workspace/lab3-v2/lab3-github-actions/metrics/localrun1_metrics.json: {"rmse": 52.2927, "mae": 42.0716, "r2": 0.5464, "n_test": 89, "model_file": "model_localrun1.joblib"}

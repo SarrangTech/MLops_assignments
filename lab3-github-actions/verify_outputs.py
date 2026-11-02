@@ -1,56 +1,59 @@
+"""Smoke-check the outputs of a train + evaluate run.
+
+Run after both stages with the same timestamp (CI does this before
+uploading artifacts). Fails with a non-zero exit code if the versioned
+model, the metrics file, the CV comparison report, or the residuals
+are missing or inconsistent with each other.
 """
-Check that a local Lab 3 training run produced everything CI expects.
 
-The GitHub Actions workflow fails the build if the training step leaves no
-model, no metrics file, or no log. This script performs the same check on a
-local run (and also flags empty files), so the result CI will see can be
-confirmed before pushing:
-
-    python verify_outputs.py [lab-dir]
-
-lab-dir defaults to this script's own folder. Exit code 0 means all three
-outputs exist and are non-empty; exit code 1 means at least one is missing
-or empty.
-"""
+import argparse
 import json
 import sys
 from pathlib import Path
 
-EXPECTED = [
-    Path("models") / "model.joblib",
-    Path("reports") / "metrics.json",
-    Path("logs") / "train.log",
-]
+BASE_DIR = Path(__file__).resolve().parent
 
 
-def main(argv):
-    base = (
-        Path(argv[1])
-        if len(argv) > 1
-        else Path(__file__).resolve().parent
-    )
-    missing = []
-    for relative in EXPECTED:
-        path = base / relative
-        if path.is_file() and path.stat().st_size > 0:
-            print(f"  ok  {relative} ({path.stat().st_size} bytes)")
-        else:
-            print(f"  MISSING or empty  {relative}")
-            missing.append(relative)
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--timestamp", default="local")
+    parser.add_argument("--base-dir", default=str(BASE_DIR))
+    args = parser.parse_args()
+    base = Path(args.base_dir)
+    ts = args.timestamp
 
-    metrics_path = base / "reports" / "metrics.json"
-    if metrics_path.is_file() and metrics_path.stat().st_size > 0:
-        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-        print("\nmetrics from the run:")
-        for key, value in metrics.items():
-            print(f"  {key}: {value}")
+    model = base / "models" / f"model_{ts}.joblib"
+    metrics_file = base / "metrics" / f"{ts}_metrics.json"
+    cv_file = base / "reports" / "cv_results.json"
+    residuals_file = base / "reports" / "residuals.csv"
+    for path in (model, metrics_file, cv_file, residuals_file):
+        if not path.exists() or path.stat().st_size == 0:
+            print(f"FAIL: missing or empty output: {path}")
+            return 1
 
-    if missing:
-        print("\nSmoke check FAILED: outputs missing or empty.")
+    metrics = json.loads(metrics_file.read_text())
+    cv = json.loads(cv_file.read_text())
+    residual_rows = len(residuals_file.read_text().splitlines()) - 1
+    if metrics["model_file"] != model.name:
+        print("FAIL: metrics were produced for a different model file.")
         return 1
-    print("\nSmoke check passed: model, metrics and log are present.")
+    if residual_rows != metrics["n_test"]:
+        print(
+            f"FAIL: residuals have {residual_rows} rows but metrics "
+            f"report n_test={metrics['n_test']}."
+        )
+        return 1
+    if cv["best_model"] not in cv["candidates"]:
+        print("FAIL: CV report's best model is not among the candidates.")
+        return 1
+
+    print(
+        "Smoke check passed: model, metrics, CV report and residuals "
+        "are present and consistent."
+    )
+    print(json.dumps(metrics))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    sys.exit(main())

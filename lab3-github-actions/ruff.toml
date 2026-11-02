@@ -1,17 +1,6 @@
-# Lint configuration for Lab 3 (used by CI's `ruff check lab3-github-actions`).
-#
-# TRY004 is ignored: the course lab's calculator raises ValueError for
-# non-numeric input by design — its docstrings document ValueError and
-# both of the lab's test suites assert it — so this submission keeps
-# that behaviour instead of switching to TypeError.
+# Lint configuration for this folder.
+# `src` and `tests` are this project's own packages.
 [lint]
-ignore = ["TRY004"]
-
-# The pipeline's own modules are first-party imports. Declared
-# explicitly so import sorting is identical in every checkout —
-# without this, whether `data` counts as first-party depends on the
-# checkout context, and local and CI lint results can disagree
-# (they did: run 41363001190 failed on I001 in files that passed
-# locally).
+extend-select = ["I"]
 [lint.isort]
-known-first-party = ["data", "src", "train"]
+known-first-party = ["src", "tests"]

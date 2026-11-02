@@ -1,5 +1,6 @@
-"""Make the lab folder importable: tests import data.py and train.py from it."""
 import sys
 from pathlib import Path
 
+# Make the lab package importable when pytest runs from the repo root
+# (CI) or from this folder (local runs).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
