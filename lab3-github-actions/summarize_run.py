@@ -34,8 +34,10 @@ def main() -> None:
         lines.append(f"| {name} | {res['cv_rmse_mean']} | {res['cv_rmse_std']} |")
     lines += [
         "",
-        f"Best model: **{cv['best_model']}** — tuned CV RMSE "
-        f"{cv['best_cv_rmse']}, params `{cv['best_params']}`",
+        (
+            f"Best model: **{cv['best_model']}** - tuned CV RMSE "
+            f"{cv['best_cv_rmse']}, params `{cv['best_params']}`"
+        ),
         "",
         "| Held-out test metric | Value |",
         "|---|---|",
