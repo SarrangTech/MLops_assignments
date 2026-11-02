@@ -122,4 +122,6 @@ model with its metrics and reports.
 | Check | Date | Revision | Result |
 |---|---|---|---|
 | Local run of every command above (Python 3.12 venv, clean folder) | 2026-11-01 | — | Ruff clean; pytest 4 passed; train → evaluate → verify all pass; metrics reproduced exactly (RMSE 52.2927, R² 0.5464) |
-| CI runs on `main` | 2026-11-01 | see Actions tab | Runs during the folder restructure failed while the old workflow and the new code were out of sync; the run on the final code and workflow is the one that counts — [Lab 3 CI runs](https://github.com/SarrangTech/MLops_assignments/actions/workflows/lab3-ci.yml) |
+| Clean-clone check (fresh `git clone` of `main`, README commands only) | 2026-11-01 | `ad8ff5e` | Ruff clean; pytest 4 passed; train → evaluate → verify pass; metrics identical (RMSE 52.2927, R² 0.5464) |
+| CI run [41373507429](https://github.com/SarrangTech/MLops_assignments/actions/runs/41373507429) | 2026-11-01 | `39309c6` | Success — all 4 jobs (the new workflow on the new code, before the README edits) |
+| CI run [41374369404](https://github.com/SarrangTech/MLops_assignments/actions/runs/41374369404) | 2026-11-01 | `ad8ff5e` | Success — all 4 jobs; artifacts `lab3-test-results-py3.11`/`-py3.12` and `lab3-model-py3.11`/`-py3.12` uploaded. Earlier runs during the folder restructure failed or were cancelled while the workflow and code were being replaced; this run is on the submitted code, and the only later commits are README-only |
