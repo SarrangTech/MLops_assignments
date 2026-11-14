@@ -66,7 +66,7 @@ every push.
 | `src/run_experiments.py` | The 12-configuration grid + 1 autologging run; exports `reports/runs_table.csv` |
 | `src/register_and_promote.py` | Registers the best run; promotion gate on the `champion` alias; writes `reports/promotion_report.json` |
 | `src/score_with_champion.py` | Loads the champion by alias, scores the test split; writes `reports/champion_metrics.json` and `reports/predictions.csv` |
-| `tests/test_tracking.py` | Pytest suite on temporary tracking stores: tracking contract, gate promote/hold behaviour, scoring round-trip |
+| `tests/test_tracking.py` | Pytest suite on temporary tracking stores: tracking contract, gate promote/hold behaviour, scoring round-trip (`tests/conftest.py` puts the project root on the import path so the suite also runs from the repository root, as CI invokes it) |
 | `verify_outputs.py` | Post-run smoke check used locally and as a CI step |
 | `summarize_run.py` | Renders the experiment + registry results as Markdown (CI run summary) |
 | `requirements.txt` | Pinned dependencies (MLflow, scikit-learn, XGBoost, pandas, pytest) |
