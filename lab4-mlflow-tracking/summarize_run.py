@@ -1,8 +1,9 @@
 """Print a Markdown summary of the experiment + registry pipeline.
 
 CI appends this to the GitHub Actions run summary so the experiment
-comparison, the promotion decision, and the champion's test metrics
-are visible on the run page without downloading artifacts.
+comparison (on validation metrics), the promotion decision, the
+champion's held-out test metrics, and the serving check are visible
+on the run page without downloading artifacts.
 """
 
 import argparse
@@ -26,7 +27,7 @@ def main() -> None:
         (base / "reports" / "champion_metrics.json").read_text()
     )
 
-    best = runs.sort_values("metrics.rmse").iloc[0]
+    best = runs.sort_values("metrics.val_rmse").iloc[0]
     n_manual = int((runs["tags.logging_mode"] == "manual").sum())
     n_autolog = int((runs["tags.logging_mode"] == "autolog").sum())
     lines = [
@@ -38,24 +39,43 @@ def main() -> None:
         ),
         "",
         (
-            f"Best run: **{best['tags.model_family']}** - test RMSE "
-            f"{best['metrics.rmse']}, MAE {best['metrics.mae']}, "
-            f"R2 {best['metrics.r2']}"
+            f"Best run by validation RMSE: **{best['tags.model_family']}** "
+            f"- val RMSE {best['metrics.val_rmse']}, "
+            f"val MAE {best['metrics.val_mae']}, "
+            f"val R2 {best['metrics.val_r2']} "
+            f"(its test RMSE, not used for selection: "
+            f"{best['metrics.test_rmse']})"
         ),
         "",
         (
             f"Promotion gate: **{promo['decision']}** - {promo['reason']}. "
-            f"Champion is now version {promo['champion_after']['version']} "
-            f"(tracked RMSE {promo['champion_after']['rmse']})."
+            f"Champion is version {promo['champion_after']['version']} "
+            f"(tracked val RMSE {promo['champion_after']['val_rmse']})."
         ),
         "",
-        "| Champion (loaded by alias) | Value |",
+        "| Champion (loaded by alias, scored once on the test split) | Value |",
         "|---|---|",
-        f"| Test RMSE | {metrics['rmse']} |",
-        f"| Test MAE | {metrics['mae']} |",
-        f"| Test R2 | {metrics['r2']} |",
+        f"| Test RMSE | {metrics['test_rmse']} |",
+        f"| Test MAE | {metrics['test_mae']} |",
+        f"| Test R2 | {metrics['test_r2']} |",
+        f"| Selection val RMSE | {metrics['selection_val_rmse']} |",
         f"| n_test | {metrics['n_test']} |",
     ]
+
+    serve_file = base / "reports" / "serve_check.json"
+    if serve_file.exists():
+        serve = json.loads(serve_file.read_text())
+        lines += [
+            "",
+            (
+                f"Serving check: **{serve['status']}** - "
+                f"`mlflow models serve` answered /invocations for "
+                f"{serve['n_rows']} test rows; max difference from "
+                f"in-process predictions {serve['max_abs_diff']} "
+                f"(tolerance {serve['tolerance']}); served via "
+                f"{serve['resolution']}."
+            ),
+        ]
     print("\n".join(lines))
 
 

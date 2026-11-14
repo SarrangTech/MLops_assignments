@@ -1,0 +1,25 @@
+{
+  "registered_model": "CaliforniaHousingModel",
+  "selection_metric": "val_rmse",
+  "margin": 0.01,
+  "decision": "hold",
+  "reason": "candidate val_rmse 0.4715 does not beat champion val_rmse 0.4715 by the 1% margin",
+  "candidate": {
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518,
+    "registered_version": null
+  },
+  "champion_before": {
+    "version": 1,
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518
+  },
+  "champion_after": {
+    "version": 1,
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518
+  }
+}

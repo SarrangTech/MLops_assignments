@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "served_model_uri": "models:/CaliforniaHousingModel@champion",
+  "resolution": "alias_uri",
+  "reason": null,
+  "model_version": 1,
+  "n_rows": 20,
+  "tolerance": 1e-06,
+  "max_abs_diff": 0.0
+}
