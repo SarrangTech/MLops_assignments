@@ -129,3 +129,5 @@ and the predictions.
 | Check | Date | Revision | Result |
 |---|---|---|---|
 | Local run of every command above in a clean venv built from `requirements.txt` (Python 3.12) | 2026-11-14 | working tree | Lint clean; pytest 3 passed; 13 runs tracked; best run XGBoost (max_depth 6) at test RMSE 0.4518; gate decision `promote`, champion version 1; champion scored by alias at RMSE 0.4518; smoke check passed. Outputs in `sample_output/` |
+| GitHub Actions, **Lab 4 CI** run #1 (both stages, Python 3.11 and 3.12) | 2026-11-14 | 3ae9a05 | All 4 jobs succeeded; run summaries on both Python versions identical to the local run (13 runs, XGBoost best at RMSE 0.4518, champion version 1, alias scoring RMSE 0.4518) |
+| Clean clone of the repository, fresh venv from `requirements.txt`, commands run as a checker would (pytest invoked from the repository root) | 2026-11-14 | 3ae9a05 | Pytest 3 passed; pipeline reproduced the same results (gate `promote`, champion version 1, RMSE 0.4518); smoke check passed |
