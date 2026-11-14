@@ -5,18 +5,29 @@
 # on Python 3.11 and 3.12; the tests use temporary MLflow tracking
 # stores, never the project database. Stage 2 (experiments-and-
 # registry) runs only if stage 1 passes: it runs the tracked
-# experiment grid, registers the best run, applies the champion
-# promotion gate, scores the champion loaded from the registry,
-# smoke-checks the outputs, writes the results to the run summary,
-# and uploads the reports as artifacts.
+# experiment grid from a fresh store, registers the best run if the
+# promotion gate passes, scores the champion loaded from the
+# registry, serves it with `mlflow models serve` and compares the
+# HTTP answers with the in-process model, smoke-checks all outputs,
+# writes the results to the run summary, and uploads the reports as
+# artifacts.
+#
+# The push / pull_request triggers are path-filtered: this workflow
+# runs only when the Lab 4 project or the workflow itself changes.
 
 name: Lab 4 CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - "lab4-mlflow-tracking/**"
+      - ".github/workflows/lab4-ci.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "lab4-mlflow-tracking/**"
+      - ".github/workflows/lab4-ci.yml"
   workflow_dispatch:
   schedule:
     - cron: "0 14 * * 1"
@@ -93,7 +104,7 @@ jobs:
 
       - name: Run the tracked experiment grid
         working-directory: lab4-mlflow-tracking
-        run: python -m src.run_experiments
+        run: python -m src.run_experiments --fresh
 
       - name: Register the best run and apply the promotion gate
         working-directory: lab4-mlflow-tracking
@@ -102,6 +113,10 @@ jobs:
       - name: Score the champion from the registry
         working-directory: lab4-mlflow-tracking
         run: python -m src.score_with_champion
+
+      - name: Serve the champion and check the HTTP predictions
+        working-directory: lab4-mlflow-tracking
+        run: python -m src.serve_check
 
       - name: Smoke-check the outputs
         working-directory: lab4-mlflow-tracking
