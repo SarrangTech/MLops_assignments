@@ -1,0 +1,10 @@
+# Generated at run time (locally and in CI). The MLflow store is a
+# working database, not a deliverable; CI publishes the exported
+# reports as run artifacts instead of committing the store.
+mlflow.db
+mlruns/
+data/train.csv
+data/test.csv
+reports/
+__pycache__/
+.pytest_cache/

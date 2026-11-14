@@ -1,0 +1,14 @@
+run_id,status,metrics.r2,metrics.mae,metrics.rmse,metrics.training_r2_score,metrics.training_mean_squared_error,metrics.training_root_mean_squared_error,metrics.training_mean_absolute_error,metrics.training_score,params.max_depth,params.n_estimators,params.n_train,params.seed,params.learning_rate,params.min_samples_split,params.bootstrap,params.min_weight_fraction_leaf,params.verbose,params.n_jobs,params.max_samples,params.criterion,params.ccp_alpha,params.max_features,params.min_impurity_decrease,params.monotonic_cst,params.oob_score,params.min_samples_leaf,params.max_leaf_nodes,params.warm_start,params.random_state,params.alpha,params.l1_ratio,tags.logging_mode,tags.model_family
+c82878660b254cf68eb1354362bb4410,FINISHED,0.8442,0.291,0.4518,,,,,,6,400,16512,42,0.1,,,,,,,,,,,,,,,,,,,manual,xgboost
+8e6ac8fc34dc46ad9b2bc2b50c5a3b46,FINISHED,0.8312,0.3096,0.4703,,,,,,4,400,16512,42,0.1,,,,,,,,,,,,,,,,,,,manual,xgboost
+08d39f9b83b7477f9a5735a39e90f761,FINISHED,0.8102,0.3364,0.4987,,,,,,3,300,16512,42,0.1,,,,,,,,,,,,,,,,,,,manual,gradient_boosting
+64d4e73c5813431cad4bc422445e5d40,FINISHED,0.8066,0.3266,0.5034,0.9743857138433831,0.0342406196447049,0.18504221044049626,0.12061492236959045,0.9743857138433831,None,300,,,,2,True,0.0,0,-1,None,squared_error,0.0,1.0,0.0,None,False,1,None,False,42,,,autolog,random_forest
+c97f0aff82f04c6a93591e5385eda84b,FINISHED,0.8066,0.3266,0.5034,,,,,,None,300,16512,42,,,,,,,,,,,,,,,,,,,,manual,random_forest
+aa35187082d34216be161b19e13ba6c8,FINISHED,0.7925,0.355,0.5215,,,,,,3,300,16512,42,0.05,,,,,,,,,,,,,,,,,,,manual,gradient_boosting
+902778f576414accbe80556298ef03ac,FINISHED,0.7749,0.3658,0.5431,,,,,,10,300,16512,42,,,,,,,,,,,,,,,,,,,,manual,random_forest
+a8978d91ec6c4786acbea4a12d485140,FINISHED,0.5761,0.5331,0.7453,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,10.0,,manual,ridge
+66bde037de804e61b7ebe4bed13e1699,FINISHED,0.5758,0.5332,0.7456,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,1.0,,manual,ridge
+2bb96df19fe94d86b114b94686d779be,FINISHED,0.5758,0.5332,0.7456,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,0.1,,manual,ridge
+7144b1b0c02e4f4990f1b07df1d40f06,FINISHED,0.5148,0.597,0.7974,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,0.1,0.5,manual,elasticnet
+09b172e871ef486fa87cc901efc18603,FINISHED,0.4845,0.6202,0.8219,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,0.1,0.9,manual,elasticnet
+95a53eee27ef41d0a61e750c4f9da036,FINISHED,0.3697,0.7048,0.9088,,,,,,,,16512,42,,,,,,,,,,,,,,,,,,0.5,0.5,manual,elasticnet

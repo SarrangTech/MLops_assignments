@@ -1,0 +1,7 @@
+{
+  "rmse": 0.4518,
+  "mae": 0.291,
+  "r2": 0.8442,
+  "n_test": 4128,
+  "model_uri": "models:/CaliforniaHousingModel@champion"
+}

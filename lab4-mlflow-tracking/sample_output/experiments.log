@@ -1,0 +1,24 @@
+$ python -m src.run_experiments
+
+$ python -m src.register_and_promote
+Successfully registered model 'CaliforniaHousingModel'.
+Created version '1' of model 'CaliforniaHousingModel'.
+{
+  "registered_model": "CaliforniaHousingModel",
+  "candidate": {
+    "run_id": "c82878660b254cf68eb1354362bb4410",
+    "rmse": 0.4518,
+    "registered_version": 1
+  },
+  "champion_before": null,
+  "margin": 0.01,
+  "decision": "promote",
+  "reason": "no existing champion",
+  "champion_after": {
+    "version": 1,
+    "rmse": 0.4518
+  }
+}
+
+$ python -m src.score_with_champion
+Champion metrics: {"rmse": 0.4518, "mae": 0.291, "r2": 0.8442, "n_test": 4128, "model_uri": "models:/CaliforniaHousingModel@champion"}

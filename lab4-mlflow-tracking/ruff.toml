@@ -1,0 +1,6 @@
+# Lint configuration for this folder.
+# `src` and `tests` are this project's own packages.
+[lint]
+extend-select = ["I"]
+[lint.isort]
+known-first-party = ["src", "tests"]

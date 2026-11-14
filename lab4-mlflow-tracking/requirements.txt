@@ -1,0 +1,10 @@
+joblib==1.4.2
+mlflow==2.20.2
+numpy==1.26.4
+pandas==2.2.3
+pytest==8.3.4
+scikit-learn==1.5.2
+# MLflow 2.20's database store imports a connection-pool class that
+# SQLAlchemy removed in 2.1; the registry backend needs 2.0.x.
+sqlalchemy==2.0.36
+xgboost==2.1.3
