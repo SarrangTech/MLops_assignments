@@ -1,24 +1,129 @@
-$ python -m src.run_experiments
+$ python -m src.run_experiments --fresh
+INFO Fresh start: removed tracking database /home/hatch/workspace/lab4/lab4-mlflow-tracking/mlflow.db
+INFO Fresh start: removed artifact directory /home/hatch/workspace/lab4/lab4-mlflow-tracking/mlruns
+INFO Splits: 13209 train / 3303 validation / 4128 test rows
+INFO setup plugin alembic.autogenerate.schemas
+INFO setup plugin alembic.autogenerate.tables
+INFO setup plugin alembic.autogenerate.types
+INFO setup plugin alembic.autogenerate.constraints
+INFO setup plugin alembic.autogenerate.defaults
+INFO setup plugin alembic.autogenerate.comments
+INFO setup plugin alembic.ext.checkconstraint_byname
+2026/11/14 12:19:33 INFO mlflow.store.db.utils: Creating initial MLflow database tables...
+2026/11/14 12:19:34 INFO mlflow.store.db.utils: Updating database tables
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 451aebb31d03, add metric step
+INFO  [alembic.runtime.migration] Running upgrade 451aebb31d03 -> 90e64c465722, migrate user column to tags
+INFO  [alembic.runtime.migration] Running upgrade 90e64c465722 -> 181f10493468, allow nulls for metric values
+INFO  [alembic.runtime.migration] Running upgrade 181f10493468 -> df50e92ffc5e, Add Experiment Tags Table
+INFO  [alembic.runtime.migration] Running upgrade df50e92ffc5e -> 7ac759974ad8, Update run tags with larger limit
+INFO  [alembic.runtime.migration] Running upgrade 7ac759974ad8 -> 89d4b8295536, create latest metrics table
+INFO  [89d4b8295536_create_latest_metrics_table_py] Migration complete!
+INFO  [alembic.runtime.migration] Running upgrade 89d4b8295536 -> 2b4d017a5e9b, add model registry tables to db
+INFO  [2b4d017a5e9b_add_model_registry_tables_to_db_py] Adding registered_models and model_versions tables to database.
+INFO  [2b4d017a5e9b_add_model_registry_tables_to_db_py] Migration complete!
+INFO  [alembic.runtime.migration] Running upgrade 2b4d017a5e9b -> cfd24bdc0731, Update run status constraint with killed
+INFO  [alembic.runtime.migration] Running upgrade cfd24bdc0731 -> 0a8213491aaa, drop_duplicate_killed_constraint
+INFO  [alembic.runtime.migration] Running upgrade 0a8213491aaa -> 728d730b5ebd, add registered model tags table
+INFO  [alembic.runtime.migration] Running upgrade 728d730b5ebd -> 27a6a02d2cf1, add model version tags table
+INFO  [alembic.runtime.migration] Running upgrade 27a6a02d2cf1 -> 84291f40a231, add run_link to model_version
+INFO  [alembic.runtime.migration] Running upgrade 84291f40a231 -> a8c4a736bde6, allow nulls for run_id
+INFO  [alembic.runtime.migration] Running upgrade a8c4a736bde6 -> 39d1c3be5f05, add_is_nan_constraint_for_metrics_tables_if_necessary
+INFO  [alembic.runtime.migration] Running upgrade 39d1c3be5f05 -> c48cb773bb87, reset_default_value_for_is_nan_in_metrics_table_for_mysql
+INFO  [alembic.runtime.migration] Running upgrade c48cb773bb87 -> bd07f7e963c5, create index on run_uuid
+INFO  [alembic.runtime.migration] Running upgrade bd07f7e963c5 -> 0c779009ac13, add deleted_time field to runs table
+INFO  [alembic.runtime.migration] Running upgrade 0c779009ac13 -> cc1f77228345, change param value length to 500
+INFO  [alembic.runtime.migration] Running upgrade cc1f77228345 -> 97727af70f4d, Add creation_time and last_update_time to experiments table
+INFO  [alembic.runtime.migration] Running upgrade 97727af70f4d -> 3500859a5d39, Add Model Aliases table
+INFO  [alembic.runtime.migration] Running upgrade 3500859a5d39 -> 7f2a7d5fae7d, add datasets inputs input_tags tables
+INFO  [alembic.runtime.migration] Running upgrade 7f2a7d5fae7d -> 2d6e25af4d3e, increase max param val length from 500 to 8000
+INFO  [alembic.runtime.migration] Running upgrade 2d6e25af4d3e -> acf3f17fdcc7, add storage location field to model versions
+INFO  [alembic.runtime.migration] Running upgrade acf3f17fdcc7 -> 867495a8f9d4, add trace tables
+INFO  [alembic.runtime.migration] Running upgrade 867495a8f9d4 -> 5b0e9adcef9c, add cascade deletion to trace tables foreign keys
+INFO  [alembic.runtime.migration] Running upgrade 5b0e9adcef9c -> 4465047574b1, increase max dataset schema size
+INFO  [alembic.runtime.migration] Running upgrade 4465047574b1 -> f5a4f2784254, increase run tag value limit to 8000
+INFO  [alembic.runtime.migration] Running upgrade f5a4f2784254 -> 0584bdc529eb, add cascading deletion to datasets from experiments
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+2026/11/14 12:19:40 INFO mlflow.tracking.fluent: Experiment with name 'california-housing-experiments' does not exist. Creating a new experiment.
 
-$ python -m src.register_and_promote
+$ python -m src.register_and_promote   (first call: promote)
 Successfully registered model 'CaliforniaHousingModel'.
 Created version '1' of model 'CaliforniaHousingModel'.
 {
   "registered_model": "CaliforniaHousingModel",
-  "candidate": {
-    "run_id": "c82878660b254cf68eb1354362bb4410",
-    "rmse": 0.4518,
-    "registered_version": 1
-  },
-  "champion_before": null,
+  "selection_metric": "val_rmse",
   "margin": 0.01,
   "decision": "promote",
   "reason": "no existing champion",
+  "candidate": {
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518,
+    "registered_version": 1
+  },
+  "champion_before": null,
   "champion_after": {
     "version": 1,
-    "rmse": 0.4518
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518
+  }
+}
+
+$ python -m src.register_and_promote   (second call, unchanged experiment: hold)
+{
+  "registered_model": "CaliforniaHousingModel",
+  "selection_metric": "val_rmse",
+  "margin": 0.01,
+  "decision": "hold",
+  "reason": "candidate val_rmse 0.4715 does not beat champion val_rmse 0.4715 by the 1% margin",
+  "candidate": {
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518,
+    "registered_version": null
+  },
+  "champion_before": {
+    "version": 1,
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518
+  },
+  "champion_after": {
+    "version": 1,
+    "run_id": "a21b8e94b0f949768fb481b4d6ecb5ed",
+    "val_rmse": 0.4715,
+    "test_rmse": 0.4518
   }
 }
 
 $ python -m src.score_with_champion
-Champion metrics: {"rmse": 0.4518, "mae": 0.291, "r2": 0.8442, "n_test": 4128, "model_uri": "models:/CaliforniaHousingModel@champion"}
+Champion metrics: {"test_rmse": 0.4518, "test_mae": 0.2955, "test_r2": 0.8442, "n_test": 4128, "model_uri": "models:/CaliforniaHousingModel@champion", "model_version": 1, "selection_val_rmse": 0.4715, "tracked_test_rmse": 0.4518}
+
+$ python -m src.serve_check
+Serve check: {"status": "pass", "served_model_uri": "models:/CaliforniaHousingModel@champion", "resolution": "alias_uri", "reason": null, "model_version": 1, "n_rows": 20, "tolerance": 1e-06, "max_abs_diff": 0.0}
+
+$ python verify_outputs.py
+Smoke check passed: runs table, promotion report, champion metrics, predictions, and serving check are present and consistent.
+{"test_rmse": 0.4518, "test_mae": 0.2955, "test_r2": 0.8442, "n_test": 4128, "model_uri": "models:/CaliforniaHousingModel@champion", "model_version": 1, "selection_val_rmse": 0.4715, "tracked_test_rmse": 0.4518}
+
+$ python summarize_run.py
+## Lab 4 - MLflow experiment + registry results
+
+Runs tracked: **13** (12 manual, 1 autolog)
+
+Best run by validation RMSE: **xgboost** - val RMSE 0.4715, val MAE 0.3094, val R2 0.8389 (its test RMSE, not used for selection: 0.4518)
+
+Promotion gate: **hold** - candidate val_rmse 0.4715 does not beat champion val_rmse 0.4715 by the 1% margin. Champion is version 1 (tracked val RMSE 0.4715).
+
+| Champion (loaded by alias, scored once on the test split) | Value |
+|---|---|
+| Test RMSE | 0.4518 |
+| Test MAE | 0.2955 |
+| Test R2 | 0.8442 |
+| Selection val RMSE | 0.4715 |
+| n_test | 4128 |
+
+Serving check: **pass** - `mlflow models serve` answered /invocations for 20 test rows; max difference from in-process predictions 0.0 (tolerance 1e-06); served via alias_uri.

@@ -1,7 +1,10 @@
 {
-  "rmse": 0.4518,
-  "mae": 0.291,
-  "r2": 0.8442,
+  "test_rmse": 0.4518,
+  "test_mae": 0.2955,
+  "test_r2": 0.8442,
   "n_test": 4128,
-  "model_uri": "models:/CaliforniaHousingModel@champion"
+  "model_uri": "models:/CaliforniaHousingModel@champion",
+  "model_version": 1,
+  "selection_val_rmse": 0.4715,
+  "tracked_test_rmse": 0.4518
 }
